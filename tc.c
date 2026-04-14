@@ -244,6 +244,9 @@ void CrossIntersection(directions dir) {
             break;
     }
 
+    //release the arrived first semaphore
+    sem_post(&ArrivedFirst);
+
     //simulate the time taken to cross the intersection based on the movement direction of the car
     int time;
     if (dir.dir_original == dir.dir_target) {
@@ -428,5 +431,6 @@ int main(void) {
     for (int i = 0; i < NUM_CARS; i++) {
         pthread_join(threads[i], NULL);
     }
+    cprintf("All cars have crossed");
     return 0;
 }
