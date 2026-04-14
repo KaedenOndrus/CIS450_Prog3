@@ -22,8 +22,7 @@ sem_t HOL_N;
 sem_t HOL_E;
 sem_t HOL_S;
 sem_t HOL_W;
-//Semaphore for the first car to arrive at the actual intersection
-sem_t ArrivedFirst;
+
 //Semaphores for each of the movement directions
 sem_t N_to_N;
 sem_t N_to_E;
@@ -86,6 +85,7 @@ char decode(char direction){
 
 void ArriveIntersection(directions dir) {
     printf("Time %.1f: Car %d (%c %c) arriving\n", get_time(), dir.cid, decode(dir.dir_original), decode(dir.dir_target));
+    fflush(stdout);
 
     //simulate the time taken to arrive at the intersection (2 seconds)
     usleep(2000000);
@@ -106,21 +106,18 @@ void ArriveIntersection(directions dir) {
             break;
     }
 
-    //wait until the car is the first to arrive at any of the stop signs (first to the actual intersection)
-    sem_wait(&ArrivedFirst);
-
     //acquire the required semaphores depending on the movement direction of the car
     switch (dir.dir_original) {
         case 'N':
             switch (dir.dir_target) {
                 case 'N':
-                    sem_wait(&N_to_N);
                     sem_wait(&E_to_E);
                     sem_wait(&E_to_N);
+                    sem_wait(&N_to_N);
                     sem_wait(&S_to_E);
-                    sem_wait(&W_to_W);
                     sem_wait(&W_to_N);
                     sem_wait(&W_to_S);
+                    sem_wait(&W_to_W);
                     break;
                 case 'E':
                     sem_wait(&N_to_E);
@@ -128,9 +125,9 @@ void ArriveIntersection(directions dir) {
                     sem_wait(&S_to_E);
                     break;
                 case 'W':
-                    sem_wait(&N_to_W);
                     sem_wait(&E_to_E);
                     sem_wait(&E_to_N);
+                    sem_wait(&N_to_W);
                     sem_wait(&S_to_S);
                     sem_wait(&S_to_W);
                     sem_wait(&W_to_S);
@@ -142,12 +139,12 @@ void ArriveIntersection(directions dir) {
             switch (dir.dir_target) {
                 case 'E':
                     sem_wait(&E_to_E);
-                    sem_wait(&S_to_S);
-                    sem_wait(&S_to_E);
-                    sem_wait(&W_to_S);
-                    sem_wait(&N_to_N);
                     sem_wait(&N_to_E);
+                    sem_wait(&N_to_N);
                     sem_wait(&N_to_W);
+                    sem_wait(&S_to_E);
+                    sem_wait(&S_to_S);
+                    sem_wait(&W_to_S);
                     break;
                 case 'S':
                     sem_wait(&E_to_S);
@@ -156,25 +153,25 @@ void ArriveIntersection(directions dir) {
                     break;
                 case 'N':
                     sem_wait(&E_to_N);
-                    sem_wait(&S_to_S);
-                    sem_wait(&S_to_E);
-                    sem_wait(&W_to_W);
-                    sem_wait(&W_to_N);
-                    sem_wait(&N_to_W);
                     sem_wait(&N_to_N);
+                    sem_wait(&N_to_W);
+                    sem_wait(&S_to_E);
+                    sem_wait(&S_to_S);
+                    sem_wait(&W_to_N);
+                    sem_wait(&W_to_W);
                     break;
             }
             break;
         case 'S':
             switch (dir.dir_target) {
                 case 'S':
-                    sem_wait(&S_to_S);
-                    sem_wait(&W_to_W);
-                    sem_wait(&W_to_S);
-                    sem_wait(&N_to_W);
                     sem_wait(&E_to_E);
-                    sem_wait(&E_to_S);
                     sem_wait(&E_to_N);
+                    sem_wait(&E_to_S);
+                    sem_wait(&N_to_W);
+                    sem_wait(&S_to_S);
+                    sem_wait(&W_to_S);
+                    sem_wait(&W_to_W);
                     break;
                 case 'W':
                     sem_wait(&S_to_W);
@@ -182,26 +179,26 @@ void ArriveIntersection(directions dir) {
                     sem_wait(&N_to_W);
                     break;
                 case 'E':
-                    sem_wait(&S_to_E);
-                    sem_wait(&W_to_W);
-                    sem_wait(&W_to_S);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_E);
-                    sem_wait(&E_to_N);
                     sem_wait(&E_to_E);
+                    sem_wait(&E_to_N);
+                    sem_wait(&N_to_E);
+                    sem_wait(&N_to_N);
+                    sem_wait(&S_to_E);
+                    sem_wait(&W_to_S);
+                    sem_wait(&W_to_W);
                     break;
             }
             break;
         case 'W':
             switch (dir.dir_target) {
                 case 'W':
-                    sem_wait(&W_to_W);
+                    sem_wait(&E_to_N);
                     sem_wait(&N_to_N);
                     sem_wait(&N_to_W);
-                    sem_wait(&E_to_N);
+                    sem_wait(&S_to_E);
                     sem_wait(&S_to_S);
                     sem_wait(&S_to_W);
-                    sem_wait(&S_to_E);
+                    sem_wait(&W_to_W);
                     break;
                 case 'N':
                     sem_wait(&W_to_N);
@@ -209,13 +206,13 @@ void ArriveIntersection(directions dir) {
                     sem_wait(&E_to_N);
                     break;
                 case 'S':
-                    sem_wait(&W_to_S);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_W);
                     sem_wait(&E_to_E);
                     sem_wait(&E_to_S);
+                    sem_wait(&N_to_N);
+                    sem_wait(&N_to_W);
                     sem_wait(&S_to_E);
                     sem_wait(&S_to_S);
+                    sem_wait(&W_to_S);
                     break;
             }
             break;
@@ -227,6 +224,7 @@ void ArriveIntersection(directions dir) {
 
 void CrossIntersection(directions dir) {
     printf("Time %.1f: Car %d (%c %c)          crossing\n", get_time(), dir.cid, decode(dir.dir_original), decode(dir.dir_target));
+    fflush(stdout);
 
     //release head of line semaphores as crossing begins
     switch(dir.dir_original) {
@@ -243,9 +241,6 @@ void CrossIntersection(directions dir) {
             sem_post(&HOL_W);
             break;
     }
-
-    //release the arrived first semaphore
-    sem_post(&ArrivedFirst);
 
     //simulate the time taken to cross the intersection based on the movement direction of the car
     int time;
@@ -266,19 +261,20 @@ void CrossIntersection(directions dir) {
 
 void ExitIntersection(directions dir) {
     printf("Time %.1f: Car %d (%c %c)                   exiting\n", get_time(), dir.cid, decode(dir.dir_original), decode(dir.dir_target));
+    fflush(stdout);
 
     //release the movement direction semaphores that were acquired for crossing
     switch (dir.dir_original) {
         case 'N':
             switch (dir.dir_target) {
                 case 'N':
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_E);
-                    sem_post(&E_to_N);
-                    sem_post(&S_to_E);
                     sem_post(&W_to_W);
-                    sem_post(&W_to_N);
                     sem_post(&W_to_S);
+                    sem_post(&W_to_N);
+                    sem_post(&S_to_E);
+                    sem_post(&N_to_N);
+                    sem_post(&E_to_N);
+                    sem_post(&E_to_E);
                     break;
                 case 'E':
                     sem_post(&N_to_E);
@@ -286,26 +282,26 @@ void ExitIntersection(directions dir) {
                     sem_post(&S_to_E);
                     break;
                 case 'W':
-                    sem_post(&N_to_W);
-                    sem_post(&E_to_E);
-                    sem_post(&E_to_N);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_W);
-                    sem_post(&W_to_S);
                     sem_post(&W_to_W);
+                    sem_post(&W_to_S);
+                    sem_post(&S_to_W);
+                    sem_post(&S_to_S);
+                    sem_post(&N_to_W);
+                    sem_post(&E_to_N);
+                    sem_post(&E_to_E);
                     break;
             }
             break;
         case 'E':
             switch (dir.dir_target) {
                 case 'E':
-                    sem_post(&E_to_E);
+                    sem_post(&W_to_S);
                     sem_post(&S_to_S);
                     sem_post(&S_to_E);
-                    sem_post(&W_to_S);
+                    sem_post(&N_to_W);
                     sem_post(&N_to_N);
                     sem_post(&N_to_E);
-                    sem_post(&N_to_W);
+                    sem_post(&E_to_E);
                     break;
                 case 'S':
                     sem_post(&E_to_S);
@@ -313,26 +309,26 @@ void ExitIntersection(directions dir) {
                     sem_post(&W_to_S);
                     break;
                 case 'N':
-                    sem_post(&E_to_N);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_E);
                     sem_post(&W_to_W);
                     sem_post(&W_to_N);
+                    sem_post(&S_to_S);
+                    sem_post(&S_to_E);
                     sem_post(&N_to_W);
                     sem_post(&N_to_N);
+                    sem_post(&E_to_N);
                     break;
             }
             break;
         case 'S':
             switch (dir.dir_target) {
                 case 'S':
-                    sem_post(&S_to_S);
                     sem_post(&W_to_W);
                     sem_post(&W_to_S);
+                    sem_post(&S_to_S);
                     sem_post(&N_to_W);
-                    sem_post(&E_to_E);
                     sem_post(&E_to_S);
                     sem_post(&E_to_N);
+                    sem_post(&E_to_E);
                     break;
                 case 'W':
                     sem_post(&S_to_W);
@@ -340,9 +336,9 @@ void ExitIntersection(directions dir) {
                     sem_post(&N_to_W);
                     break;
                 case 'E':
-                    sem_post(&S_to_E);
                     sem_post(&W_to_W);
                     sem_post(&W_to_S);
+                    sem_post(&S_to_E);
                     sem_post(&N_to_N);
                     sem_post(&N_to_E);
                     sem_post(&E_to_N);
@@ -354,12 +350,12 @@ void ExitIntersection(directions dir) {
             switch (dir.dir_target) {
                 case 'W':
                     sem_post(&W_to_W);
-                    sem_post(&N_to_N);
-                    sem_post(&N_to_W);
-                    sem_post(&E_to_N);
-                    sem_post(&S_to_S);
                     sem_post(&S_to_W);
+                    sem_post(&S_to_S);
                     sem_post(&S_to_E);
+                    sem_post(&N_to_W);
+                    sem_post(&N_to_N);
+                    sem_post(&E_to_N);
                     break;
                 case 'N':
                     sem_post(&W_to_N);
@@ -368,12 +364,12 @@ void ExitIntersection(directions dir) {
                     break;
                 case 'S':
                     sem_post(&W_to_S);
-                    sem_post(&N_to_N);
-                    sem_post(&N_to_W);
-                    sem_post(&E_to_E);
-                    sem_post(&E_to_S);
-                    sem_post(&S_to_E);
                     sem_post(&S_to_S);
+                    sem_post(&S_to_E);
+                    sem_post(&N_to_W);
+                    sem_post(&N_to_N);
+                    sem_post(&E_to_S);
+                    sem_post(&E_to_E);
                     break;
             }
             break;
@@ -389,17 +385,18 @@ void* Car(void* arg) {
     ArriveIntersection(dir);
     CrossIntersection(dir);
     ExitIntersection(dir);
+    
     return NULL;
 }
 
 int main(void) {
+    setbuf(stdout, NULL);
     
     //initialize the semaphores
     sem_init(&HOL_N, 0, 1);
     sem_init(&HOL_E, 0, 1);
     sem_init(&HOL_S, 0, 1);
     sem_init(&HOL_W, 0, 1);
-    sem_init(&ArrivedFirst, 0, 1);
     sem_init(&N_to_N, 0, 1);
     sem_init(&N_to_E, 0, 1);
     sem_init(&N_to_S, 0, 1);
@@ -431,6 +428,7 @@ int main(void) {
     for (int i = 0; i < NUM_CARS; i++) {
         pthread_join(threads[i], NULL);
     }
-    cprintf("All cars have crossed");
+    printf("All cars have crossed\n");
+    fflush(stdout);
     return 0;
 }
