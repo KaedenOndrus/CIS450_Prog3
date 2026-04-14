@@ -53,10 +53,10 @@ double get_time() {
 }
 
 typedef struct _directions {
-char dir_original;
-char dir_target;
-int cid;
-double arrival_time;
+    int cid;
+    double arrival_time;
+    char dir_original;
+    char dir_target;
 } directions;
 
 directions cars[NUM_CARS] = {
