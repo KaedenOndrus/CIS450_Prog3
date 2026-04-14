@@ -60,14 +60,14 @@ typedef struct _directions {
 } directions;
 
 directions cars[NUM_CARS] = {
-    {1, 1.1, 'N', 'N'},
-    {2, 2.2, 'N', 'N'},
-    {3, 3.3, 'N', 'W'},
-    {4, 4.4, 'S', 'S'},
-    {5, 5.5, 'S', 'E'},
-    {6, 6.6, 'N', 'N'},
-    {7, 7.7, 'E', 'N'},
-    {8, 8.8, 'W', 'N'}
+    {.cid = 1, .arrival_time = 1.1, .dir_original = 'N', .dir_target = 'N'},
+    {.cid = 2, .arrival_time = 2.2, .dir_original = 'N', .dir_target = 'N'},
+    {.cid = 3, .arrival_time = 3.3, .dir_original = 'N', .dir_target = 'W'},
+    {.cid = 4, .arrival_time = 4.4, .dir_original = 'S', .dir_target = 'S'},
+    {.cid = 5, .arrival_time = 5.5, .dir_original = 'S', .dir_target = 'E'},
+    {.cid = 6, .arrival_time = 6.6, .dir_original = 'N', .dir_target = 'N'},
+    {.cid = 7, .arrival_time = 7.7, .dir_original = 'E', .dir_target = 'N'},
+    {.cid = 8, .arrival_time = 8.8, .dir_original = 'W', .dir_target = 'N'}
 };
 
 char decode(char direction){
