@@ -10,7 +10,7 @@ Name: Kaeden Ondrus
 #include <semaphore.h>
 #include <time.h>
 
-const int NUM_CARS = 8;
+#define NUM_CARS 8
 
 //crossing times in seconds
 const int LEFT_TIME = 5;
@@ -377,7 +377,8 @@ void ExitIntersection(directions dir) {
     }
 }
 
-void Car(directions dir) {
+void* Car(void* arg) {
+    directions dir = *(directions*)arg;
     //wait until the arrival time of the car has been reached
     while (get_time() < dir.arrival_time) {
         usleep(100000); //sleep for 100ms to avoid busy waiting
@@ -385,6 +386,7 @@ void Car(directions dir) {
     ArriveIntersection(dir);
     CrossIntersection(dir);
     ExitIntersection(dir);
+    return NULL;
 }
 
 int main(void) {
