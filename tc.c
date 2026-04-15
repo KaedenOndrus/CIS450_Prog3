@@ -41,6 +41,41 @@ sem_t W_to_N;
 sem_t W_to_E;
 sem_t W_to_S;
 
+//locks for integer counters
+sem_t lockN_to_N;
+sem_t lockN_to_E;
+sem_t lockN_to_S;
+sem_t lockN_to_W;
+sem_t lockE_to_E;
+sem_t lockE_to_S;
+sem_t lockE_to_W;
+sem_t lockE_to_N;
+sem_t lockS_to_S;
+sem_t lockS_to_W;
+sem_t lockS_to_N;
+sem_t lockS_to_E;
+sem_t lockW_to_W;
+sem_t lockW_to_N;
+sem_t lockW_to_E;
+sem_t lockW_to_S;
+
+//integer counters
+int cntN_to_N;
+int cntN_to_E;
+int cntN_to_S;
+int cntN_to_W;
+int cntE_to_E;
+int cntE_to_S;
+int cntE_to_W;
+int cntE_to_N;
+int cntS_to_S;
+int cntS_to_W;
+int cntS_to_N;
+int cntS_to_E;
+int cntW_to_W;
+int cntW_to_N;
+int cntW_to_E;
+int cntW_to_S;
 
 struct timespec start_time;
 
@@ -82,6 +117,21 @@ char decode(char direction){
     }
 }
 
+void route_acquire(sem_t *lock, sem_t *route, int *counter) {
+    sem_wait(lock);
+    if (++*counter == 1) {
+        sem_wait(route);
+    }
+    sem_post(lock);
+}
+
+void route_release(sem_t *lock, sem_t *route, int *counter) {
+    sem_wait(lock);
+    if (--*counter == 0) {
+        sem_post(route);
+    }
+    sem_post(lock);
+}
 
 void ArriveIntersection(directions dir) {
     printf("Time %.1f: Car %d (%c %c) arriving\n", get_time(), dir.cid, decode(dir.dir_original), decode(dir.dir_target));
@@ -111,27 +161,30 @@ void ArriveIntersection(directions dir) {
         case 'N':
             switch (dir.dir_target) {
                 case 'N':
-                    sem_wait(&E_to_E);
-                    sem_wait(&E_to_N);
                     sem_wait(&N_to_N);
-                    sem_wait(&S_to_E);
-                    sem_wait(&W_to_N);
-                    sem_wait(&W_to_S);
-                    sem_wait(&W_to_W);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_acquire(&lockW_to_N, &W_to_N, &cntW_to_N);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&N_to_N);
                     break;
                 case 'E':
                     sem_wait(&N_to_E);
-                    sem_wait(&E_to_E);
-                    sem_wait(&S_to_E);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    sem_post(&N_to_E);
                     break;
                 case 'W':
-                    sem_wait(&E_to_E);
-                    sem_wait(&E_to_N);
                     sem_wait(&N_to_W);
-                    sem_wait(&S_to_S);
-                    sem_wait(&S_to_W);
-                    sem_wait(&W_to_S);
-                    sem_wait(&W_to_W);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_acquire(&lockS_to_W, &S_to_W, &cntS_to_W);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&N_to_W);
                     break;
             }
             break;
@@ -139,87 +192,96 @@ void ArriveIntersection(directions dir) {
             switch (dir.dir_target) {
                 case 'E':
                     sem_wait(&E_to_E);
-                    sem_wait(&N_to_E);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_W);
-                    sem_wait(&S_to_E);
-                    sem_wait(&S_to_S);
-                    sem_wait(&W_to_S);
+                    route_acquire(&lockN_to_E, &N_to_E, &cntN_to_E);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    sem_post(&E_to_E);
                     break;
                 case 'S':
                     sem_wait(&E_to_S);
-                    sem_wait(&S_to_S);
-                    sem_wait(&W_to_S);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    sem_post(&E_to_S);
                     break;
                 case 'N':
                     sem_wait(&E_to_N);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_W);
-                    sem_wait(&S_to_E);
-                    sem_wait(&S_to_S);
-                    sem_wait(&W_to_N);
-                    sem_wait(&W_to_W);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_acquire(&lockW_to_N, &W_to_N, &cntW_to_N);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&E_to_N);
                     break;
             }
             break;
         case 'S':
             switch (dir.dir_target) {
                 case 'S':
-                    sem_wait(&E_to_E);
-                    sem_wait(&E_to_N);
-                    sem_wait(&E_to_S);
-                    sem_wait(&N_to_W);
                     sem_wait(&S_to_S);
-                    sem_wait(&W_to_S);
-                    sem_wait(&W_to_W);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockE_to_S, &E_to_S, &cntE_to_S);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&S_to_S);
                     break;
                 case 'W':
                     sem_wait(&S_to_W);
-                    sem_wait(&W_to_W);
-                    sem_wait(&N_to_W);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&S_to_W);
                     break;
                 case 'E':
-                    sem_wait(&E_to_E);
-                    sem_wait(&E_to_N);
-                    sem_wait(&N_to_E);
-                    sem_wait(&N_to_N);
                     sem_wait(&S_to_E);
-                    sem_wait(&W_to_S);
-                    sem_wait(&W_to_W);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockN_to_E, &N_to_E, &cntN_to_E);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_acquire(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_acquire(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    sem_post(&S_to_E);
                     break;
             }
             break;
         case 'W':
             switch (dir.dir_target) {
                 case 'W':
-                    sem_wait(&E_to_N);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_W);
-                    sem_wait(&S_to_E);
-                    sem_wait(&S_to_S);
-                    sem_wait(&S_to_W);
                     sem_wait(&W_to_W);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_acquire(&lockS_to_W, &S_to_W, &cntS_to_W);
+                    sem_post(&W_to_W);
                     break;
                 case 'N':
                     sem_wait(&W_to_N);
-                    sem_wait(&N_to_N);
-                    sem_wait(&E_to_N);
+                    route_acquire(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    sem_post(&W_to_N);
                     break;
                 case 'S':
-                    sem_wait(&E_to_E);
-                    sem_wait(&E_to_S);
-                    sem_wait(&N_to_N);
-                    sem_wait(&N_to_W);
-                    sem_wait(&S_to_E);
-                    sem_wait(&S_to_S);
                     sem_wait(&W_to_S);
+                    route_acquire(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_acquire(&lockE_to_S, &E_to_S, &cntE_to_S);
+                    route_acquire(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_acquire(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_acquire(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_acquire(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    sem_post(&W_to_S);
                     break;
             }
             break;
     }
 
     //The car may now cross the intersection as all of the prerequisite semaphores have been acquired
-    //This is handled by the Car function
+    //This is handled by the Car function that calls the CrossIntersection function after ArriveIntersection
 }
 
 void CrossIntersection(directions dir) {
@@ -268,108 +330,96 @@ void ExitIntersection(directions dir) {
         case 'N':
             switch (dir.dir_target) {
                 case 'N':
-                    sem_post(&W_to_W);
-                    sem_post(&W_to_S);
-                    sem_post(&W_to_N);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_N);
-                    sem_post(&E_to_E);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_release(&lockW_to_N, &W_to_N, &cntW_to_N);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
                     break;
                 case 'E':
-                    sem_post(&N_to_E);
-                    sem_post(&E_to_E);
-                    sem_post(&S_to_E);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
                     break;
                 case 'W':
-                    sem_post(&W_to_W);
-                    sem_post(&W_to_S);
-                    sem_post(&S_to_W);
-                    sem_post(&S_to_S);
-                    sem_post(&N_to_W);
-                    sem_post(&E_to_N);
-                    sem_post(&E_to_E);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_release(&lockS_to_W, &S_to_W, &cntS_to_W);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
                     break;
             }
             break;
         case 'E':
             switch (dir.dir_target) {
                 case 'E':
-                    sem_post(&W_to_S);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_W);
-                    sem_post(&N_to_N);
-                    sem_post(&N_to_E);
-                    sem_post(&E_to_E);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_release(&lockN_to_E, &N_to_E, &cntN_to_E);
                     break;
                 case 'S':
-                    sem_post(&E_to_S);
-                    sem_post(&S_to_S);
-                    sem_post(&W_to_S);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
                     break;
                 case 'N':
-                    sem_post(&W_to_W);
-                    sem_post(&W_to_N);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_W);
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_N);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockW_to_N, &W_to_N, &cntW_to_N);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
                     break;
             }
             break;
         case 'S':
             switch (dir.dir_target) {
                 case 'S':
-                    sem_post(&W_to_W);
-                    sem_post(&W_to_S);
-                    sem_post(&S_to_S);
-                    sem_post(&N_to_W);
-                    sem_post(&E_to_S);
-                    sem_post(&E_to_N);
-                    sem_post(&E_to_E);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_release(&lockE_to_S, &E_to_S, &cntE_to_S);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
                     break;
                 case 'W':
-                    sem_post(&S_to_W);
-                    sem_post(&W_to_W);
-                    sem_post(&N_to_W);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
                     break;
                 case 'E':
-                    sem_post(&W_to_W);
-                    sem_post(&W_to_S);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_N);
-                    sem_post(&N_to_E);
-                    sem_post(&E_to_N);
-                    sem_post(&E_to_E);
+                    route_release(&lockW_to_W, &W_to_W, &cntW_to_W);
+                    route_release(&lockW_to_S, &W_to_S, &cntW_to_S);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_release(&lockN_to_E, &N_to_E, &cntN_to_E);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
                     break;
             }
             break;
         case 'W':
             switch (dir.dir_target) {
                 case 'W':
-                    sem_post(&W_to_W);
-                    sem_post(&S_to_W);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_W);
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_N);
+                    route_release(&lockS_to_W, &S_to_W, &cntS_to_W);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
                     break;
                 case 'N':
-                    sem_post(&W_to_N);
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_N);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_release(&lockE_to_N, &E_to_N, &cntE_to_N);
                     break;
                 case 'S':
-                    sem_post(&W_to_S);
-                    sem_post(&S_to_S);
-                    sem_post(&S_to_E);
-                    sem_post(&N_to_W);
-                    sem_post(&N_to_N);
-                    sem_post(&E_to_S);
-                    sem_post(&E_to_E);
+                    route_release(&lockS_to_S, &S_to_S, &cntS_to_S);
+                    route_release(&lockS_to_E, &S_to_E, &cntS_to_E);
+                    route_release(&lockN_to_W, &N_to_W, &cntN_to_W);
+                    route_release(&lockN_to_N, &N_to_N, &cntN_to_N);
+                    route_release(&lockE_to_S, &E_to_S, &cntE_to_S);
+                    route_release(&lockE_to_E, &E_to_E, &cntE_to_E);
                     break;
             }
             break;
@@ -413,6 +463,23 @@ int main(void) {
     sem_init(&W_to_N, 0, 1);
     sem_init(&W_to_E, 0, 1);
     sem_init(&W_to_S, 0, 1);
+
+    sem_init(&lockN_to_N, 0, 1);
+    sem_init(&lockN_to_E, 0, 1);
+    sem_init(&lockN_to_S, 0, 1);
+    sem_init(&lockN_to_W, 0, 1);
+    sem_init(&lockE_to_E, 0, 1);
+    sem_init(&lockE_to_S, 0, 1);
+    sem_init(&lockE_to_W, 0, 1);
+    sem_init(&lockE_to_N, 0, 1);
+    sem_init(&lockS_to_S, 0, 1);
+    sem_init(&lockS_to_W, 0, 1);
+    sem_init(&lockS_to_N, 0, 1);
+    sem_init(&lockS_to_E, 0, 1);
+    sem_init(&lockW_to_W, 0, 1);
+    sem_init(&lockW_to_N, 0, 1);
+    sem_init(&lockW_to_E, 0, 1);
+    sem_init(&lockW_to_S, 0, 1);
 
     //get start time for the program
     clock_gettime(CLOCK_MONOTONIC, &start_time);
